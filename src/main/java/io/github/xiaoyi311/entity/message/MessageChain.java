@@ -28,7 +28,7 @@ public class MessageChain {
                 ret.add((MessageChain) messageConst.newInstance(data));
             } catch (Exception ignored) { }
         });
-        return ret.toArray(MessageChain[]::new);
+        return ret.toArray(new MessageChain[0]);
     }
 
     /**
