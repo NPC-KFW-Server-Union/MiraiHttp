@@ -3,7 +3,7 @@ package io.github.xiaoyi311.event;
 import java.util.EventListener;
 
 /**
- * MiraiHttp 事件监听类<br/>
+ * MiraiHttp 事件监听类<br>
  * 触发事件时调用对应方法
  */
 public interface MiraiEventListener extends EventListener {

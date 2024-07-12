@@ -60,7 +60,7 @@ public class MessageChain {
     }
 
     /**
-     * 将 MessageChain 传为 Mirai 码<br/>
+     * 将 MessageChain 传为 Mirai 码<br>
      * 此处为空，等待子类重写
      *
      * @return Mirai 码
@@ -68,7 +68,7 @@ public class MessageChain {
     public String toMiraiString() { return ""; }
 
     /**
-     * 将 MessageChain 传为 JSON 信息<br/>
+     * 将 MessageChain 传为 JSON 信息<br>
      * 此处为空，等待子类重写
      *
      * @return JSON 信息

@@ -6,7 +6,7 @@ import java.util.EventObject;
 import java.util.Iterator;
 
 /**
- * MiraiHttp 事件基类<br/>
+ * MiraiHttp 事件基类<br>
  * 实现触发事件方法
  */
 public class MiraiEventBase extends EventObject {
@@ -26,7 +26,7 @@ public class MiraiEventBase extends EventObject {
     }
 
     /**
-     * 触发事件<br/>
+     * 触发事件<br>
      * 遍历所有监听类
      */
     public void doEvent(MiraiHttpConn session) {
@@ -39,7 +39,7 @@ public class MiraiEventBase extends EventObject {
     }
 
     /**
-     * 触发事件<br/>
+     * 触发事件<br>
      * 此处为空，等待子类重写并通知监听类
      *
      * @param listener 监听类

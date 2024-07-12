@@ -1,6 +1,7 @@
 package io.github.xiaoyi311.util;
 
 import com.alibaba.fastjson.JSONObject;
+import io.github.xiaoyi311.err.NetworkIOError;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 /**
- * 网络请求工具类<br/>
+ * 网络请求工具类<br>
  * 发出网络请求，与 Api 建立连接
  */
 public class Network {
@@ -21,7 +22,7 @@ public class Network {
      * @param param 请求参数，请求参数应该是
      * @return URL  所代表远程资源的响应结果
      */
-    public static NetworkReturn sendGet(String url, String param) {
+    public static NetworkReturn sendGet(String url, String param) throws NetworkIOError {
         String result = "";
         BufferedReader in = null;
         try {
@@ -37,8 +38,8 @@ public class Network {
             while ((line = in.readLine()) != null) {
                 result += line;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            throw new NetworkIOError(String.format("GET %s（參數：%s）時失敗！", url, param), e);
         }
         finally {
             try {

@@ -20,52 +20,77 @@ public class MiraiHttpConn {
     private final String verifyKey;
 
     /**
-     * 是否已绑定机器人
+     * 綁定的机器人球球号
      */
-    private boolean isBind = false;
+    protected Long boundRobotQq;
 
     /**
      * 轮询
      */
-    private MiraiHttpMessageGet messageGet;
+    private MiraiHttpMsgFetchingThread msgGettingThread;
 
     /**
      * Session 信息
      */
     protected String session;
 
+
     /**
-     * 机器人球球号
+     * 網絡錯誤處理策略
      */
-    protected Long robotQq;
+    private final MiraiHttpMsgFetchingThread.NetworkErrorStrategy networkErrorStrategy;
+
+    /**
+     * Session 過期錯誤處理策略
+     */
+    private final MiraiHttpMsgFetchingThread.SessionOutDateErrorStrategy sessionOutDateErrorStrategy;
 
 
     /**
      * 创建 MiraiHttpConn
      *
-     * @param verifyKey       密钥
-     * @param host            地址，类似于：127.0.0.1:8080
+     * @param verifyKey                     密钥
+     * @param host                          地址，类似于：127.0.0.1:8080
+     * @param networkErrorStrategy          網絡錯誤處理策略
+     * @param sessionOutDateErrorStrategy   Session 過期錯誤處理策略
      * @throws VerifyKeyError 验证密钥错误
      */
-    protected MiraiHttpConn(String verifyKey, String host) throws VerifyKeyError {
+    protected MiraiHttpConn(
+            String verifyKey,
+            String host,
+            MiraiHttpMsgFetchingThread.NetworkErrorStrategy networkErrorStrategy,
+            MiraiHttpMsgFetchingThread.SessionOutDateErrorStrategy sessionOutDateErrorStrategy
+    ) throws VerifyKeyError {
         this.host = host;
         this.verifyKey = verifyKey;
+        this.networkErrorStrategy = networkErrorStrategy;
+        this.sessionOutDateErrorStrategy = sessionOutDateErrorStrategy;
         this.session = getSessionKey();
     }
 
     /**
-     * 创建 MiraiHttpConn，并绑定机器人<br/>
+     * 创建 MiraiHttpConn，并绑定机器人<br>
      * 需要快速绑定监听器
      *
-     * @param verifyKey       密钥
-     * @param host            地址，类似于：127.0.0.1:8080
-     * @param qq              机器人 QQ 号
+     * @param verifyKey                     密钥
+     * @param host                          地址，类似于：127.0.0.1:8080
+     * @param qq                            机器人 QQ 号
+     * @param networkErrorStrategy          網絡錯誤處理策略
+     * @param sessionOutDateErrorStrategy   Session 過期錯誤處理策略
      * @throws VerifyKeyError 验证密钥错误
      * @throws RobotNotFound  机器人未找到
      */
-    protected MiraiHttpConn(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
+    protected MiraiHttpConn(
+            String verifyKey,
+            String host,
+            Long qq,
+            MiraiHttpMsgFetchingThread.NetworkErrorStrategy networkErrorStrategy,
+            MiraiHttpMsgFetchingThread.SessionOutDateErrorStrategy sessionOutDateErrorStrategy
+    ) throws VerifyKeyError, RobotNotFound, NetworkIOError {
         this.host = host;
         this.verifyKey = verifyKey;
+        this.networkErrorStrategy = networkErrorStrategy;
+        this.sessionOutDateErrorStrategy = sessionOutDateErrorStrategy;
         this.session = getSessionKey();
         try {
             bindRobot(qq);
@@ -82,11 +107,14 @@ public class MiraiHttpConn {
     /**
      * 刷新 SessionKey 并重新绑定机器人。
      */
-    protected void refreshSessionKeyAndBindRobot() throws VerifyKeyError, RobotNotFound {
+    protected void refreshSessionKeyAndBindRobot() throws VerifyKeyError, RobotNotFound, NetworkIOError {
         this.session = getSessionKey();
         try {
-            if(this.robotQq != null)
-                bindRobot(this.robotQq);
+            if(this.isBound()) {
+                long qq = boundRobotQq;
+                unbind();
+                bindRobot(qq);
+            }
         } catch (SessionOutDate e) {
             //获取完直接绑定也能失效？这就离谱了，直接丢错吧，我不管了
             throw new RuntimeException(e);
@@ -120,9 +148,11 @@ public class MiraiHttpConn {
     /**
      * 启动 Http 轮询，获取事件信息
      */
-    private void messageGet() {
-        messageGet = new MiraiHttpMessageGet(this);
-        messageGet.start();
+    private void launchMsgGettingThread() {
+        if (msgGettingThread == null || !msgGettingThread.isAlive()) {
+            msgGettingThread = new MiraiHttpMsgFetchingThread(this, networkErrorStrategy, sessionOutDateErrorStrategy);
+            msgGettingThread.start();
+        }
     }
 
     /**
@@ -139,18 +169,28 @@ public class MiraiHttpConn {
      *
      * @return 是否完成
      */
-    public boolean isBind() {
-        return isBind;
+    public boolean isBound() {
+        return boundRobotQq != null;
     }
 
     /**
-     * 释放 Session，用于取消机器人绑定<br/>
-     * 注意！一旦释放 Session，Session 会失效，此类也不应再使用，需重新新建<br/>
+     * 解除 qq 號的綁定，並使 MiraiHttpConn 無效。一旦調用此函數，此类對象不应再使用，需重新新建<br>
+     */
+    public void unbind() throws NetworkIOError {
+        releaseSession();
+
+        //释放 Session
+
+        boundRobotQq = null;
+    }
+
+    /**
+     * 釋放 Session，用於解綁機器人 qq，或刷新 session。<br>
      * 在绑定成功以前不应该释放，会抛出未绑定错误
      */
-    public void releaseSession() {
+    private void releaseSession() throws NetworkIOError {
         //Session 是否绑定机器人
-        if (!isBind){
+        if (!isBound()){
             throw new SessionNotBind();
         }
 
@@ -159,13 +199,11 @@ public class MiraiHttpConn {
         data.put("verifyKey", verifyKey);
         data.put("qq", getRobot().qq);
 
-        //释放 Session
         Network.sendPost(host + "/release", data.toJSONString());
-        isBind = false;
     }
 
     /**
-     * 绑定到机器人<br/>
+     * 绑定到机器人<br>
      * 一旦绑定，事件系统就会启动，所以需在绑定前绑定事件
      *
      * @param qq               指定机器人 QQ
@@ -173,9 +211,9 @@ public class MiraiHttpConn {
      * @throws SessionIsBind   Session 已绑定到某个 QQ，不可重复绑定
      * @throws SessionNotBind  Session 已失效，需要重新新建
      */
-    public Robot bindRobot(Long qq) throws RobotNotFound, SessionIsBind, SessionOutDate {
+    public Robot bindRobot(Long qq) throws RobotNotFound, SessionIsBind, SessionOutDate, NetworkIOError {
         //Session 是否绑定机器人
-        if (isBind){
+        if (isBound()){
             throw new SessionIsBind();
         }
 
@@ -200,20 +238,20 @@ public class MiraiHttpConn {
             throw new SessionOutDate();
         }
 
-        isBind = true;
-        messageGet();
+        boundRobotQq = qq;
+        launchMsgGettingThread();
         return getRobot();
     }
 
     /**
-     * 获取机器人信息<br/>
+     * 获取机器人信息<br>
      * 在绑定成功以前不应该获取，会抛出未绑定错误
      *
      * @return 机器人实体
      */
-    public Robot getRobot() {
+    public Robot getRobot() throws NetworkIOError {
         //Session 是否绑定机器人
-        if (!isBind){
+        if (!isBound()){
             throw new SessionNotBind();
         }
 
@@ -233,7 +271,7 @@ public class MiraiHttpConn {
     }
 
     /**
-     * 获取 Api 管理器<br/>
+     * 获取 Api 管理器<br>
      * 可进行 Api 操作
      *
      * @return Api 管理器
@@ -246,5 +284,5 @@ public class MiraiHttpConn {
      * 设置新信息查询间隔时间
      * @param time 时间（毫秒）
      */
-    public void setCheckTime(Integer time){ messageGet.setCheckTime(time); }
+    public void setCheckTime(Integer time){ msgGettingThread.setCheckTime(time); }
 }

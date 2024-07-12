@@ -5,7 +5,7 @@ import io.github.xiaoyi311.MiraiHttpConn;
 import java.util.*;
 
 /**
- * MiraiHttp 监听管理器<br/>
+ * MiraiHttp 监听管理器<br>
  * 管理并通知所有监听类
  */
 public class EventManager {

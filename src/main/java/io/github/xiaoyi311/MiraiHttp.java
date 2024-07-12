@@ -1,5 +1,6 @@
 package io.github.xiaoyi311;
 
+import io.github.xiaoyi311.err.NetworkIOError;
 import io.github.xiaoyi311.err.RobotNotFound;
 import io.github.xiaoyi311.err.VerifyKeyError;
 import io.github.xiaoyi311.event.EventManager;
@@ -10,7 +11,7 @@ import io.github.xiaoyi311.event.MiraiEventListener;
  */
 public class MiraiHttp {
     /**
-     * 创建到 Mirai 服务器的连接，并绑定机器人<br/>
+     * 创建到 Mirai 服务器的连接，并绑定机器人<br>
      * 可避免 Session 超时，但是如果不快速注册监听器，部分信息可能无法及时收到
      *
      * @param verifyKey       验证密钥
@@ -20,12 +21,18 @@ public class MiraiHttp {
      * @throws VerifyKeyError 验证密钥错误
      * @throws RobotNotFound  指定机器人未找到
      */
-    public static MiraiHttpConn createConn(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
-        return new MiraiHttpConn(verifyKey, host, qq);
+    public static MiraiHttpConn createConn(
+            String verifyKey,
+            String host,
+            Long qq,
+            MiraiHttpMsgFetchingThread.NetworkErrorStrategy networkErrorStrategy,
+            MiraiHttpMsgFetchingThread.SessionOutDateErrorStrategy sessionOutDateErrorStrategy
+    ) throws VerifyKeyError, RobotNotFound, NetworkIOError {
+        return new MiraiHttpConn(verifyKey, host, qq, networkErrorStrategy, sessionOutDateErrorStrategy);
     }
 
     /**
-     * 创建到 Mirai 服务器的连接<br/>
+     * 创建到 Mirai 服务器的连接<br>
      * 并不推荐，如果长时间（30s）不绑定需要重新创建
      *
      * @param verifyKey       验证密钥
@@ -33,12 +40,17 @@ public class MiraiHttp {
      * @return                Session 管理
      * @throws VerifyKeyError 验证密钥错误
      */
-    public static MiraiHttpConn createConn(String verifyKey, String host) throws VerifyKeyError {
-        return new MiraiHttpConn(verifyKey, host);
+    public static MiraiHttpConn createConn(
+            String verifyKey,
+            String host,
+            MiraiHttpMsgFetchingThread.NetworkErrorStrategy networkErrorStrategy,
+            MiraiHttpMsgFetchingThread.SessionOutDateErrorStrategy sessionOutDateErrorStrategy
+    ) throws VerifyKeyError {
+        return new MiraiHttpConn(verifyKey, host, networkErrorStrategy, sessionOutDateErrorStrategy);
     }
 
     /**
-     * 注册事件监听器<br/>
+     * 注册事件监听器<br>
      * 建议在绑定机器人前进行注册，防止部分信息无法接收
      *
      * @param listener 监听器

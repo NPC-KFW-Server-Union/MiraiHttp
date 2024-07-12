@@ -6,7 +6,7 @@ import io.github.xiaoyi311.MiraiHttpConn;
 import io.github.xiaoyi311.entity.message.MessageChain;
 
 /**
- * MiraiHttp 信息事件基类<br/>
+ * MiraiHttp 信息事件基类<br>
  * 存储通用参数，读取信息链
  */
 public class MessageEventBase extends MiraiEventBase {

@@ -32,7 +32,7 @@ public class MiraiHttpApi {
      */
     public String sendGroupMessage(Long group, MessageChain[] message){
         // Mirai 连接是否绑定机器人
-        if (!miraiConn.isBind()){
+        if (!miraiConn.isBound()){
             throw new SessionNotBind();
         }
 
@@ -58,7 +58,7 @@ public class MiraiHttpApi {
      */
     public String sendGroupMessage(Long group, Long id, MessageChain[] message){
         //Session 是否绑定机器人
-        if (!miraiConn.isBind()){
+        if (!miraiConn.isBound()){
             throw new SessionNotBind();
         }
 
