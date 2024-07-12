@@ -10,7 +10,7 @@ import io.github.xiaoyi311.event.MiraiEventListener;
  */
 public class MiraiHttp {
     /**
-     * 创建 Session，并绑定机器人<br/>
+     * 创建到 Mirai 服务器的连接，并绑定机器人<br/>
      * 可避免 Session 超时，但是如果不快速注册监听器，部分信息可能无法及时收到
      *
      * @param verifyKey       验证密钥
@@ -20,12 +20,12 @@ public class MiraiHttp {
      * @throws VerifyKeyError 验证密钥错误
      * @throws RobotNotFound  指定机器人未找到
      */
-    public static MiraiHttpSession createSession(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
-        return new MiraiHttpSession(verifyKey, host, qq);
+    public static MiraiHttpConn createConn(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
+        return new MiraiHttpConn(verifyKey, host, qq);
     }
 
     /**
-     * 创建 Session<br/>
+     * 创建到 Mirai 服务器的连接<br/>
      * 并不推荐，如果长时间（30s）不绑定需要重新创建
      *
      * @param verifyKey       验证密钥
@@ -33,8 +33,8 @@ public class MiraiHttp {
      * @return                Session 管理
      * @throws VerifyKeyError 验证密钥错误
      */
-    public static MiraiHttpSession createSession(String verifyKey, String host) throws VerifyKeyError {
-        return new MiraiHttpSession(verifyKey, host);
+    public static MiraiHttpConn createConn(String verifyKey, String host) throws VerifyKeyError {
+        return new MiraiHttpConn(verifyKey, host);
     }
 
     /**
@@ -42,19 +42,19 @@ public class MiraiHttp {
      * 建议在绑定机器人前进行注册，防止部分信息无法接收
      *
      * @param listener 监听器
-     * @param session  对应的 Session
+     * @param conn  对应的 Mirai 连接
      */
-    public static void registerListener(MiraiEventListener listener, MiraiHttpSession session){
-        EventManager.addListener(session, listener);
+    public static void registerListener(MiraiEventListener listener, MiraiHttpConn conn){
+        EventManager.addListener(conn, listener);
     }
 
     /**
      * 卸载事件监听器
      *
      * @param listener 监听器
-     * @param session  对应的 Session
+     * @param conn  对应的 Mirai 连接
      */
-    public static void removeListener(MiraiEventListener listener, MiraiHttpSession session){
-        EventManager.removeListener(session, listener);
+    public static void removeListener(MiraiEventListener listener, MiraiHttpConn conn){
+        EventManager.removeListener(conn, listener);
     }
 }

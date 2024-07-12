@@ -1,15 +1,15 @@
 package io.github.xiaoyi311.entity;
 
-import io.github.xiaoyi311.MiraiHttpSession;
+import io.github.xiaoyi311.MiraiHttpConn;
 
 /**
  * 机器人实体
  */
 public class Robot {
     /**
-     * Session
+     * Mirai 连接
      */
-    public MiraiHttpSession session;
+    public MiraiHttpConn conn;
 
     /**
      * QQ 号

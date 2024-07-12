@@ -1,6 +1,6 @@
 package io.github.xiaoyi311.event;
 
-import io.github.xiaoyi311.MiraiHttpSession;
+import io.github.xiaoyi311.MiraiHttpConn;
 
 import java.util.EventObject;
 import java.util.Iterator;
@@ -11,25 +11,25 @@ import java.util.Iterator;
  */
 public class MiraiEventBase extends EventObject {
     /**
-     * Session 管理
+     * Mirai 连接
      */
-    public MiraiHttpSession session;
+    public MiraiHttpConn conn;
 
     /**
      * 创建事件
      *
-     * @param session 触发此事件的 Session
+     * @param conn Mirai 连接
      */
-    public MiraiEventBase(MiraiHttpSession session) {
-        super(session);
-        this.session = session;
+    public MiraiEventBase(MiraiHttpConn conn) {
+        super(conn);
+        this.conn = conn;
     }
 
     /**
      * 触发事件<br/>
      * 遍历所有监听类
      */
-    public void doEvent(MiraiHttpSession session) {
+    public void doEvent(MiraiHttpConn session) {
         Iterator iter = EventManager.getListener(session);
         if (iter != null){
             while (iter.hasNext()){

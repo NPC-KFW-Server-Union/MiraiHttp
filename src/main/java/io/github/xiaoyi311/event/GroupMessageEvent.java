@@ -1,7 +1,7 @@
 package io.github.xiaoyi311.event;
 
 import com.alibaba.fastjson.JSONObject;
-import io.github.xiaoyi311.MiraiHttpSession;
+import io.github.xiaoyi311.MiraiHttpConn;
 import io.github.xiaoyi311.entity.Group;
 import io.github.xiaoyi311.entity.Member;
 import io.github.xiaoyi311.entity.Permission;
@@ -28,11 +28,11 @@ public class GroupMessageEvent extends MessageEventBase {
     /**
      * 创建事件
      *
-     * @param session 触发事件的 Session
+     * @param conn Mirai 连接
      * @param data 事件数据
      */
-    public GroupMessageEvent(MiraiHttpSession session, JSONObject data){
-        super(session);
+    public GroupMessageEvent(MiraiHttpConn conn, JSONObject data){
+        super(conn);
 
         //生成群成员数据
         JSONObject temp = data.getJSONObject("sender");

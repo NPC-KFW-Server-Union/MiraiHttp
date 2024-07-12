@@ -10,17 +10,17 @@ import io.github.xiaoyi311.util.Network;
  */
 public class MiraiHttpApi {
     /**
-     * Session
+     * Mirai 连接
      */
-    private MiraiHttpSession session;
+    private final MiraiHttpConn miraiConn;
 
     /**
      * 创建一个 Api
      *
-     * @param session Session
+     * @param conn Mirai 连接
      */
-    protected MiraiHttpApi(MiraiHttpSession session){
-        this.session = session;
+    protected MiraiHttpApi(MiraiHttpConn conn){
+        this.miraiConn = conn;
     }
 
     /**
@@ -31,19 +31,19 @@ public class MiraiHttpApi {
      * @return        信息 ID，如果发送失败返回 null
      */
     public String sendGroupMessage(Long group, MessageChain[] message){
-        //Session 是否绑定机器人
-        if (!session.isBind()){
+        // Mirai 连接是否绑定机器人
+        if (!miraiConn.isBind()){
             throw new SessionNotBind();
         }
 
         //构建参数
         JSONObject data = new JSONObject();
-        data.put("sessionKey", session.session);
+        data.put("sessionKey", miraiConn.session);
         data.put("target", group);
         data.put("messageChain", MessageChain.toJSONObject(message));
 
-        //获取 Session
-        Network.NetworkReturn ret = Network.sendPost(session.getHost() + "/sendGroupMessage", data.toJSONString());
+        //获取 Mirai 连接
+        Network.NetworkReturn ret = Network.sendPost(miraiConn.getHost() + "/sendGroupMessage", data.toJSONString());
 
         return ret.data.getString("messageId");
     }
@@ -58,19 +58,19 @@ public class MiraiHttpApi {
      */
     public String sendGroupMessage(Long group, Long id, MessageChain[] message){
         //Session 是否绑定机器人
-        if (!session.isBind()){
+        if (!miraiConn.isBind()){
             throw new SessionNotBind();
         }
 
         //构建参数
         JSONObject data = new JSONObject();
-        data.put("sessionKey", session.session);
+        data.put("sessionKey", miraiConn.session);
         data.put("target", group);
         data.put("quote", id);
         data.put("messageChain", MessageChain.toJSONObject(message));
 
         //获取 Session
-        Network.NetworkReturn ret = Network.sendPost(session.getHost() + "/sendGroupMessage", data.toJSONString());
+        Network.NetworkReturn ret = Network.sendPost(miraiConn.getHost() + "/sendGroupMessage", data.toJSONString());
 
         return ret.data.getString("messageId");
     }

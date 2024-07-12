@@ -2,7 +2,7 @@ package io.github.xiaoyi311.event;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import io.github.xiaoyi311.MiraiHttpSession;
+import io.github.xiaoyi311.MiraiHttpConn;
 import io.github.xiaoyi311.entity.message.MessageChain;
 
 /**
@@ -28,10 +28,10 @@ public class MessageEventBase extends MiraiEventBase {
     /**
      * 创建事件
      *
-     * @param session 触发此事件的 Session
+     * @param conn Mirai 连接
      */
-    public MessageEventBase(MiraiHttpSession session) {
-        super(session);
+    public MessageEventBase(MiraiHttpConn conn) {
+        super(conn);
     }
 
     /**

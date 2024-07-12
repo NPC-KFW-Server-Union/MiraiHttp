@@ -6,10 +6,9 @@ import io.github.xiaoyi311.err.*;
 import io.github.xiaoyi311.util.Network;
 
 /**
- * Mirai Session 存储<br/>
- * 管理 Session，创建 Api 类
+ * 一个到 Mirai 服务器的连接。
  */
-public class MiraiHttpSession {
+public class MiraiHttpConn {
     /**
      * 连接地址
      */
@@ -33,23 +32,29 @@ public class MiraiHttpSession {
     /**
      * Session 信息
      */
-    protected final String session;
+    protected String session;
 
     /**
-     * 创建 Session
+     * 机器人球球号
+     */
+    protected Long robotQq;
+
+
+    /**
+     * 创建 MiraiHttpConn
      *
      * @param verifyKey       密钥
      * @param host            地址，类似于：127.0.0.1:8080
      * @throws VerifyKeyError 验证密钥错误
      */
-    protected MiraiHttpSession(String verifyKey, String host) throws VerifyKeyError {
+    protected MiraiHttpConn(String verifyKey, String host) throws VerifyKeyError {
         this.host = host;
         this.verifyKey = verifyKey;
         this.session = getSessionKey();
     }
 
     /**
-     * 创建 Session，并绑定机器人<br/>
+     * 创建 MiraiHttpConn，并绑定机器人<br/>
      * 需要快速绑定监听器
      *
      * @param verifyKey       密钥
@@ -58,12 +63,30 @@ public class MiraiHttpSession {
      * @throws VerifyKeyError 验证密钥错误
      * @throws RobotNotFound  机器人未找到
      */
-    protected MiraiHttpSession(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
+    protected MiraiHttpConn(String verifyKey, String host, Long qq) throws VerifyKeyError, RobotNotFound {
         this.host = host;
         this.verifyKey = verifyKey;
         this.session = getSessionKey();
         try {
             bindRobot(qq);
+        } catch (SessionOutDate e) {
+            //获取完直接绑定也能失效？这就离谱了，直接丢错吧，我不管了
+            throw new RuntimeException(e);
+        } catch (SessionIsBind e) {
+            //我刚新建的也能被绑定！？！？离谱死我了
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    /**
+     * 刷新 SessionKey 并重新绑定机器人。
+     */
+    protected void refreshSessionKeyAndBindRobot() throws VerifyKeyError, RobotNotFound {
+        this.session = getSessionKey();
+        try {
+            if(this.robotQq != null)
+                bindRobot(this.robotQq);
         } catch (SessionOutDate e) {
             //获取完直接绑定也能失效？这就离谱了，直接丢错吧，我不管了
             throw new RuntimeException(e);
@@ -147,7 +170,7 @@ public class MiraiHttpSession {
      *
      * @param qq               指定机器人 QQ
      * @throws RobotNotFound   指定机器人未找到
-     * @throws SessionIsBind   Session 已绑定，不可重复绑定
+     * @throws SessionIsBind   Session 已绑定到某个 QQ，不可重复绑定
      * @throws SessionNotBind  Session 已失效，需要重新新建
      */
     public Robot bindRobot(Long qq) throws RobotNotFound, SessionIsBind, SessionOutDate {
@@ -205,7 +228,7 @@ public class MiraiHttpSession {
         robot.qq = ret.data.getLong("id");
         robot.name = ret.data.getString("nickname");
         robot.remark = ret.data.getString("remark");
-        robot.session = this;
+        robot.conn = this;
         return robot;
     }
 

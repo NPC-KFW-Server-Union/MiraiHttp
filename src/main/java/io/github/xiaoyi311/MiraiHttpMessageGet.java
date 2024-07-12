@@ -1,6 +1,8 @@
 package io.github.xiaoyi311;
 
 import com.alibaba.fastjson.JSONObject;
+import io.github.xiaoyi311.err.RobotNotFound;
+import io.github.xiaoyi311.err.VerifyKeyError;
 import io.github.xiaoyi311.event.MessageEventBase;
 import io.github.xiaoyi311.event.MiraiEventBase;
 import io.github.xiaoyi311.util.Network;
@@ -18,17 +20,17 @@ public class MiraiHttpMessageGet extends Thread{
     private Integer checkTime = 500;
 
     /**
-     * Session 管理
+     * Mirai 连接
      */
-    private final MiraiHttpSession session;
+    private final MiraiHttpConn miraiConn;
 
     /**
      * 初始化 Http 请求轮回
      *
-     * @param session Session 管理器
+     * @param miraiConn Mirai 连接
      */
-    protected MiraiHttpMessageGet(MiraiHttpSession session){
-        this.session = session;
+    protected MiraiHttpMessageGet(MiraiHttpConn miraiConn){
+        this.miraiConn = miraiConn;
     }
 
     /**
@@ -41,11 +43,11 @@ public class MiraiHttpMessageGet extends Thread{
     @Override
     public void run() {
         //直到机器人取消绑定
-        while (session.isBind()){
+        while (miraiConn.isBind()){
             //获取信息队列大小
             Network.NetworkReturn ret = Network.sendGet(
-                    session.getHost() + "/countMessage",
-                    "sessionKey=" + session.session
+                    miraiConn.getHost() + "/countMessage",
+                    "sessionKey=" + miraiConn.session
             );
 
             //Session 是否过期，过期则等待
@@ -54,8 +56,8 @@ public class MiraiHttpMessageGet extends Thread{
                 if (ret.data.getInteger("data") > 0){
                     //获取头部信息
                     ret = Network.sendGet(
-                            session.getHost() + "/fetchMessage",
-                            "sessionKey=" + session.session + "&count=5"
+                            miraiConn.getHost() + "/fetchMessage",
+                            "sessionKey=" + miraiConn.session + "&count=5"
                     );
 
                     //Session 是否过期，过期则等待
@@ -71,14 +73,21 @@ public class MiraiHttpMessageGet extends Thread{
                                 String eventPack = "io.github.xiaoyi311.event."
                                         + relData.getString("type")
                                         + (relData.containsKey("messageChain") ? "Event" : "");
-                                Constructor<?> eventConst = Class.forName(eventPack).getConstructor(MiraiHttpSession.class, JSONObject.class);
-                                MiraiEventBase event = (MessageEventBase) eventConst.newInstance(session, relData);
-                                event.doEvent(session);
+                                Constructor<?> eventConst = Class.forName(eventPack).getConstructor(MiraiHttpConn.class, JSONObject.class);
+                                MiraiEventBase event = (MessageEventBase) eventConst.newInstance(miraiConn, relData);
+                                event.doEvent(miraiConn);
                             } catch (Exception e) { System.out.print(e); }
                         });
                     }
                 }
-            }
+            } else {
+                // 尝试刷新 Session 并重新绑定机器人球球
+				try {
+					miraiConn.refreshSessionKeyAndBindRobot();
+				} catch (VerifyKeyError | RobotNotFound e) {
+					throw new RuntimeException("刷新 Session 并重新绑定机器人球球失败！", e);
+				}
+			}
 
             //等待
             try {
